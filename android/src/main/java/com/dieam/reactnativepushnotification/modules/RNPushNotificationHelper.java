@@ -390,7 +390,7 @@ public class RNPushNotificationHelper {
                 commit(editor);
             }
 
-            if (!(this.isApplicationInForeground(context) && bundle.getBoolean("ignoreInForeground"))) {
+            if (!this.isApplicationInForeground(context)) {
                 Notification info = notification.build();
                 info.defaults |= Notification.DEFAULT_LIGHTS;
 
