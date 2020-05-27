@@ -1,6 +1,6 @@
 package com.dieam.reactnativepushnotification.modules;
 
-import com.google.firebase.messaging.FirebaseMessagingService;
+import com.leanplum.LeanplumPushFirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import android.os.Handler;
@@ -17,12 +17,13 @@ import com.facebook.react.bridge.WritableMap;
 
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
 
-public class RNPushNotificationListenerService extends FirebaseMessagingService {
+public class RNPushNotificationListenerService extends LeanplumPushFirebaseMessagingService {
 
     private RNReceivedMessageHandler mMessageReceivedHandler = new RNReceivedMessageHandler(this);
 
     @Override
     public void onNewToken(String token) {
+        super.onNewToken(token);
         final String deviceToken = token;
         Log.d(LOG_TAG, "Refreshed token: " + deviceToken);
 
@@ -61,6 +62,7 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
 
     @Override
     public void onMessageReceived(RemoteMessage message) {
+        super.onMessageReceived(message);
         mMessageReceivedHandler.handleReceivedMessage(message);
     }
 }

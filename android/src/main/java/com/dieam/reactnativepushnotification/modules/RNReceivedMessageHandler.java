@@ -52,10 +52,11 @@ public class RNReceivedMessageHandler {
 
         Map<String, String> notificationData = message.getData();
 
-        // Copy `twi_body` to `message` to support Twilio
-        if (notificationData.containsKey("twi_body")) {
-            bundle.putString("message", notificationData.get("twi_body"));
+        // Copy `message` to `message` to support Intercom
+        if (notificationData.containsKey("message")) {
+            bundle.putString("message", notificationData.get("message"));
         }
+
         JSONObject data = getPushData(notificationData.get("data"));
 
         if (data != null) {
