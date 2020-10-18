@@ -7,13 +7,14 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "pod-install": "cd ios && pod install"
   },
   "dependencies": {
-    "@react-native-community/push-notification-ios": "^1.1.1",
+    "@react-native-community/push-notification-ios": "^1.4.0",
     "react": "16.11.0",
     "react-native": "0.62.2",
-    "react-native-push-notification": "git+https://git@github.com/zo0r/react-native-push-notification.git"
+    "react-native-push-notification": "zo0r/react-native-push-notification#dev"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",

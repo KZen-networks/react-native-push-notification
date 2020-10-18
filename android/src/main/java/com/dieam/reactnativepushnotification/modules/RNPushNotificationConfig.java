@@ -8,8 +8,8 @@ import android.os.Bundle;
 import android.util.Log;
 
 class RNPushNotificationConfig {
-    private static final String KEY_CHANNEL_NAME = "com.dieam.reactnativepushnotification.notification_channel_name";
-    private static final String KEY_CHANNEL_DESCRIPTION = "com.dieam.reactnativepushnotification.notification_channel_description";
+    private static final String KEY_NOTIFICATION_FIREBASE_DEFAULT_CHANNEL_ID = "com.google.firebase.messaging.default_notification_channel_id";
+    private static final String KEY_NOTIFICATION_DEFAULT_CHANNEL_ID = "com.dieam.reactnativepushnotification.default_notification_channel_id";
     private static final String KEY_NOTIFICATION_FOREGROUND = "com.dieam.reactnativepushnotification.notification_foreground";
     private static final String KEY_NOTIFICATION_COLOR = "com.dieam.reactnativepushnotification.notification_color";
 
@@ -30,29 +30,19 @@ class RNPushNotificationConfig {
         }
     }
 
-    public String getChannelName() {
+    private String getStringValue(String key, String defaultValue) {
         try {
-            final String name = metadata.getString(KEY_CHANNEL_NAME);
-            if (name != null && name.length() > 0) {
-                return name;
+            final String value = metadata.getString(key);
+
+            if (value != null && value.length() > 0) {
+                return value;
             }
         } catch (Exception e) {
-            Log.w(RNPushNotification.LOG_TAG, "Unable to find " + KEY_CHANNEL_NAME + " in manifest. Falling back to default");
+            Log.w(RNPushNotification.LOG_TAG, "Unable to find " + key + " in manifest. Falling back to default");
         }
+
         // Default
-        return "rn-push-notification-channel";
-    }
-    public String getChannelDescription() {
-        try {
-            final String description = metadata.getString(KEY_CHANNEL_DESCRIPTION);
-            if (description != null) {
-                return description;
-            }
-        } catch (Exception e) {
-            Log.w(RNPushNotification.LOG_TAG, "Unable to find " + KEY_CHANNEL_DESCRIPTION + " in manifest. Falling back to default");
-        }
-        // Default
-        return "";
+        return defaultValue;
     }
 
     public int getNotificationColor() {
@@ -74,5 +64,17 @@ class RNPushNotificationConfig {
         }
         // Default
         return false;
+    }
+
+    public String getNotificationDefaultChannelId() {
+        try {
+            return getStringValue(KEY_NOTIFICATION_DEFAULT_CHANNEL_ID,
+              getStringValue(KEY_NOTIFICATION_FIREBASE_DEFAULT_CHANNEL_ID, "fcm_fallback_notification_channel")
+            );
+        } catch (Exception e) {
+            Log.w(RNPushNotification.LOG_TAG, "Unable to find " + KEY_NOTIFICATION_DEFAULT_CHANNEL_ID + " in manifest. Falling back to default");
+        }
+        // Default
+        return "fcm_fallback_notification_channel";
     }
 }

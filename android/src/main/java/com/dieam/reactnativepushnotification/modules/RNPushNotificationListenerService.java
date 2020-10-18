@@ -7,7 +7,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.dieam.reactnativepushnotification.modules.RNReceivedMessageHandler;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.bridge.Arguments;
@@ -19,19 +18,32 @@ import static com.dieam.reactnativepushnotification.modules.RNPushNotification.L
 
 public class RNPushNotificationListenerService extends LeanplumPushFirebaseMessagingService {
 
-    private RNReceivedMessageHandler mMessageReceivedHandler = new RNReceivedMessageHandler(this);
+    private RNReceivedMessageHandler mMessageReceivedHandler;
+    private FirebaseMessagingService mFirebaseServiceDelegate;
+
+    public RNPushNotificationListenerService() {
+        super();
+        this.mMessageReceivedHandler = new RNReceivedMessageHandler(this);
+    }
+
+    public RNPushNotificationListenerService(FirebaseMessagingService delegate) {
+        super();
+        this.mFirebaseServiceDelegate = delegate;
+        this.mMessageReceivedHandler = new RNReceivedMessageHandler(delegate);
+    }
 
     @Override
     public void onNewToken(String token) {
         super.onNewToken(token);
         final String deviceToken = token;
+        final FirebaseMessagingService serviceRef = (this.mFirebaseServiceDelegate == null) ? this : this.mFirebaseServiceDelegate;
         Log.d(LOG_TAG, "Refreshed token: " + deviceToken);
 
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
                 // Construct and load our normal React JS code bundle
-                ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+                final ReactInstanceManager mReactInstanceManager = ((ReactApplication)serviceRef.getApplication()).getReactNativeHost().getReactInstanceManager();
                 ReactContext context = mReactInstanceManager.getCurrentReactContext();
                 // If it's constructed, send a notification
                 if (context != null) {
@@ -41,6 +53,7 @@ public class RNPushNotificationListenerService extends LeanplumPushFirebaseMessa
                     mReactInstanceManager.addReactInstanceEventListener(new ReactInstanceManager.ReactInstanceEventListener() {
                         public void onReactContextInitialized(ReactContext context) {
                             handleNewToken((ReactApplicationContext) context, deviceToken);
+                            mReactInstanceManager.removeReactInstanceEventListener(this);
                         }
                     });
                     if (!mReactInstanceManager.hasStartedCreatingInitialContext()) {

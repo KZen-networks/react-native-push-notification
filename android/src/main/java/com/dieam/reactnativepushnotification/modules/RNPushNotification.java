@@ -22,13 +22,14 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import android.util.Log;
 
@@ -42,7 +43,7 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
     public static final String LOG_TAG = "RNPushNotification";// all logging should use this tag
 
     private RNPushNotificationHelper mRNPushNotificationHelper;
-    private final Random mRandomNumberGenerator = new Random(System.currentTimeMillis());
+    private final SecureRandom mRandomNumberGenerator = new SecureRandom();
     private RNPushNotificationJsDelivery mJsDelivery;
 
     public RNPushNotification(ReactApplicationContext reactContext) {
@@ -56,8 +57,6 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
         mRNPushNotificationHelper = new RNPushNotificationHelper(applicationContext);
         // This is used to delivery callbacks to JS
         mJsDelivery = new RNPushNotificationJsDelivery(reactContext);
-
-        mRNPushNotificationHelper.checkOrCreateDefaultChannel();
     }
 
     @Override
@@ -77,8 +76,15 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
         if (intent.hasExtra("notification")) {
             bundle = intent.getBundleExtra("notification");
         } else if (intent.hasExtra("google.message_id")) {
-            bundle = intent.getExtras();
+            bundle = new Bundle();
+
+            bundle.putBundle("data", intent.getExtras());
         }
+
+        if(null != bundle && !bundle.getBoolean("foreground", false) && !bundle.containsKey("userInteraction")) {
+          bundle.putBoolean("userInteraction", true);
+        }
+
         return bundle;
     }
 
@@ -86,34 +92,19 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
     public void onNewIntent(Intent intent) {
         Bundle bundle = this.getBundleFromIntent(intent);
         if (bundle != null) {
-            bundle.putBoolean("foreground", false);
-            intent.putExtra("notification", bundle);
             mJsDelivery.notifyNotification(bundle);
         }
     }
+    
+    @ReactMethod
+    public void invokeApp(ReadableMap data) {
+        Bundle bundle = null;
 
-    private void registerNotificationsReceiveNotificationActions(ReadableArray actions) {
-        IntentFilter intentFilter = new IntentFilter();
-        // Add filter for each actions.
-        for (int i = 0; i < actions.size(); i++) {
-            String action = actions.getString(i);
-            intentFilter.addAction(getReactApplicationContext().getPackageName() + "." + action);
+        if (data != null) {
+            bundle = Arguments.toBundle(data);
         }
-        
-        getReactApplicationContext().registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Bundle bundle = intent.getBundleExtra("notification");
 
-                // Notify the action.
-                mJsDelivery.notifyNotificationAction(bundle);
-
-                // Dismiss the notification popup.
-                NotificationManager manager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
-                int notificationID = Integer.parseInt(bundle.getString("id"));
-                manager.cancel(notificationID);
-            }
-        }, intentFilter);
+        mRNPushNotificationHelper.invokeApp(bundle);
     }
 
     @ReactMethod
@@ -227,13 +218,8 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
     /**
      * Clear notification from the notification centre.
      */
-    public void clearLocalNotification(int notificationID) {
-        mRNPushNotificationHelper.clearNotification(notificationID);
-    }
-
-    @ReactMethod
-    public void registerNotificationActions(ReadableArray actions) {
-        registerNotificationsReceiveNotificationActions(actions);
+    public void clearLocalNotification(String tag, int notificationID) {
+        mRNPushNotificationHelper.clearNotification(tag, notificationID);
     }
 
     @ReactMethod
@@ -250,7 +236,15 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
      * Returns a list of all notifications currently in the Notification Center
      */
     public void getDeliveredNotifications(Callback callback) {
-      callback.invoke(mRNPushNotificationHelper.getDeliveredNotifications());
+        callback.invoke(mRNPushNotificationHelper.getDeliveredNotifications());
+    }
+
+    @ReactMethod
+    /**
+     * Returns a list of all currently scheduled notifications
+     */
+    public void getScheduledLocalNotifications(Callback callback) {
+        callback.invoke(mRNPushNotificationHelper.getScheduledLocalNotifications());
     }
 
     @ReactMethod
@@ -278,5 +272,61 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
               }
           }
       }).start();
+    }
+
+    @ReactMethod
+    /**
+     * List all channels id
+     */
+    public void getChannels(Callback callback) {
+      WritableArray array = Arguments.fromList(mRNPushNotificationHelper.listChannels());
+      
+      if(callback != null) {
+        callback.invoke(array);
+      }
+    }
+
+    @ReactMethod
+    /**
+     * Check if channel exists with a given id
+     */
+    public void channelExists(String channel_id, Callback callback) {
+      boolean exists = mRNPushNotificationHelper.channelExists(channel_id);
+
+      if(callback != null) {
+        callback.invoke(exists);
+      }
+    }
+
+    @ReactMethod
+    /**
+     * Creates a channel if it does not already exist. Returns whether the channel was created.
+     */
+    public void createChannel(ReadableMap channelInfo, Callback callback) {
+      boolean created = mRNPushNotificationHelper.createChannel(channelInfo);
+
+      if(callback != null) {
+        callback.invoke(created);
+      }
+    }
+
+    @ReactMethod
+    /**
+     * Check if channel is blocked with a given id
+     */
+    public void channelBlocked(String channel_id, Callback callback) {
+      boolean blocked = mRNPushNotificationHelper.channelBlocked(channel_id);
+
+      if(callback != null) {
+        callback.invoke(blocked);
+      }
+    }
+
+    @ReactMethod
+    /**
+     * Delete channel with a given id
+     */
+    public void deleteChannel(String channel_id) {
+      mRNPushNotificationHelper.deleteChannel(channel_id);
     }
 }
