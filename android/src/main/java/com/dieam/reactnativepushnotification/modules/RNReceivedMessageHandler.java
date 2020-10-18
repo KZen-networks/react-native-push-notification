@@ -44,14 +44,14 @@ public class RNReceivedMessageHandler {
         // data has it
         if (remoteNotification != null) {
             // ^ It's null when message is from GCM
-            RNPushNotificationConfig config = new RNPushNotificationConfig(mFirebaseMessagingService.getApplication());  
+            RNPushNotificationConfig config = new RNPushNotificationConfig(mFirebaseMessagingService.getApplication());
 
             bundle.putString("title", remoteNotification.getTitle());
             bundle.putString("message", remoteNotification.getBody());
             bundle.putString("sound", remoteNotification.getSound());
             bundle.putString("color", remoteNotification.getColor());
             bundle.putString("tag", remoteNotification.getTag());
-            
+
             if(remoteNotification.getChannelId() != null) {
               bundle.putString("channelId", remoteNotification.getChannelId());
             }
@@ -72,12 +72,12 @@ public class RNReceivedMessageHandler {
                         break;
                 }
             }
-          
+
             bundle.putString("visibility", visibilityString);
 
             Integer priority = remoteNotification.getNotificationPriority();
             String priorityString = "high";
-            
+
             if (priority != null) {
               switch (priority) {
                   case NotificationCompat.PRIORITY_MAX:
@@ -101,15 +101,18 @@ public class RNReceivedMessageHandler {
 
             if(uri != null) {
                 String imageUrl = uri.toString();
-              
+
                 bundle.putString("bigPictureUrl", imageUrl);
                 bundle.putString("largeIconUrl", imageUrl);
             }
+        } else {
+            RNPushNotificationConfig config = new RNPushNotificationConfig(mFirebaseMessagingService.getApplication());
+            bundle.putString("channelId", config.getNotificationDefaultChannelId());
         }
 
         Bundle dataBundle = new Bundle();
         Map<String, String> notificationData = message.getData();
-        
+
         if (notificationData.containsKey("title")) {
             bundle.putString("title", notificationData.get("title"));
         }
@@ -166,7 +169,7 @@ public class RNReceivedMessageHandler {
 
         Application applicationContext = (Application) context.getApplicationContext();
 
-        RNPushNotificationConfig config = new RNPushNotificationConfig(mFirebaseMessagingService.getApplication());  
+        RNPushNotificationConfig config = new RNPushNotificationConfig(mFirebaseMessagingService.getApplication());
         RNPushNotificationHelper pushNotificationHelper = new RNPushNotificationHelper(applicationContext);
 
         boolean isForeground = pushNotificationHelper.isApplicationInForeground();
