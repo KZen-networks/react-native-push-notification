@@ -110,6 +110,15 @@ public class RNReceivedMessageHandler {
         Bundle dataBundle = new Bundle();
         Map<String, String> notificationData = message.getData();
         
+        if (notificationData.containsKey("title")) {
+            bundle.putString("title", notificationData.get("title"));
+        }
+        if (notificationData.containsKey("message")) {
+            bundle.putString("message", notificationData.get("message"));
+        } else if (notificationData.containsKey("body")) {
+            bundle.putString("message", notificationData.get("body"));
+        }
+
         for(Map.Entry<String, String> entry : notificationData.entrySet()) {
             dataBundle.putString(entry.getKey(), entry.getValue());
         }
